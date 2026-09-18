@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Briefing — Instagram da Loja</title>
+  <style>
+    /* ───────────────── RESET & BASE ───────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent:   #f97316;
+      --accent2:  #ef4444;
+      --dark:     #0a0a0a;
+      --card:     rgba(15, 15, 15, 0.88);
+      --border:   rgba(249,115,22,0.25);
+      --text:     #f1f1f1;
+      --muted:    #9ca3af;
+      --radius:   14px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ───────────────── CANVAS BACKGROUND ───────────────── */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ───────────────── LAYOUT ───────────────── */
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 80px;
+    }
+
+    /* ───────────────── HEADER ───────────────── */
+    .site-header {
+      text-align: center;
+      margin-bottom: 36px;
+      animation: fadeDown .7s ease both;
+    }
+
+    .site-header .logo-icon {
+      font-size: 3rem;
+      line-height: 1;
+      filter: drop-shadow(0 0 18px var(--accent));
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+
+    .site-header h1 {
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-top: 10px;
+      background: linear-gradient(90deg, #f97316, #ef4444);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .site-header p {
+      color: var(--muted);
+      font-size: .95rem;
+      margin-top: 6px;
+    }
+
+    /* ───────────────── PROGRESS ───────────────── */
+    .progress-wrap {
+      width: 100%;
+      max-width: 700px;
+      margin-bottom: 28px;
+      animation: fadeDown .7s .1s ease both;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: .82rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .progress-bar-bg {
+      height: 7px;
+      background: rgba(255,255,255,.08);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #f97316, #ef4444);
+      border-radius: 99px;
+      transition: width .5s cubic-bezier(.4,0,.2,1);
+      box-shadow: 0 0 12px rgba(249,115,22,.5);
+    }
+
+    /* ───────────────── CARD ───────────────── */
+    .card {
+      width: 100%;
+      max-width: 700px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px 40px;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 8px 40px rgba(0,0,0,.6), 0 0 0 1px rgba(249,115,22,.08);
+      animation: fadeUp .5s ease both;
+    }
+
+    @media (max-width: 540px) {
+      .card { padding: 24px 18px; }
+    }
+
+    /* ───────────────── SECTION HEADER ───────────────── */
+    .section-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(249,115,22,.12);
+      border: 1px solid rgba(249,115,22,.3);
+      border-radius: 99px;
+      padding: 4px 14px;
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      font-size: 1.45rem;
+      font-weight: 800;
+      margin-bottom: 28px;
+      line-height: 1.2;
+    }
+
+    /* ───────────────── QUESTION ───────────────── */
+    .question-block {
+      margin-bottom: 28px;
+    }
+
+    .question-block:last-child { margin-bottom: 0; }
+
+    .q-label {
+      display: block;
+      font-weight: 700;
+      font-size: .97rem;
+      margin-bottom: 6px;
+      color: #e5e7eb;
+    }
+
+    .q-label span.num {
+      display: inline-block;
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      color: #fff;
+      font-size: .7rem;
+      font-weight: 800;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 22px;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .q-hint {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    /* inputs */
+    input[type="text"],
+    textarea,
+    select {
+      width: 100%;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 9px;
+      color: var(--text);
+      font-size: .95rem;
+      padding: 11px 14px;
+      transition: border-color .2s, box-shadow .2s;
+      outline: none;
+      resize: vertical;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(249,115,22,.18);
+    }
+
+    textarea { min-height: 90px; }
+
+    select option { background: #1a1a1a; }
+
+    /* checkboxes / radios */
+    .options-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .opt-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px;
+      padding: 9px 14px;
+      cursor: pointer;
+      font-size: .88rem;
+      transition: border-color .2s, background .2s;
+      user-select: none;
+    }
+
+    .opt-label:hover {
+      border-color: var(--accent);
+      background: rgba(249,115,22,.08);
+    }
+
+    .opt-label input { display: none; }
+
+    .opt-label.checked {
+      border-color: var(--accent);
+      background: rgba(249,115,22,.15);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .opt-label .dot {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: border-color .2s, background .2s;
+    }
+
+    .opt-label.checked .dot {
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .opt-label .dot::after {
+      content: '';
+      width: 6px; height: 6px;
+      background: #fff;
+      border-radius: 50%;
+      display: none;
+    }
+
+    .opt-label.checked .dot::after { display: block; }
+
+    /* "Outro" inline input */
+    .outro-input {
+      margin-top: 10px;
+      display: none;
+    }
+    .outro-input.visible { display: block; }
+
+    /* ───────────────── NAVIGATION ───────────────── */
+    .nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 36px;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      border-radius: 10px;
+      font-size: .95rem;
+      font-weight: 700;
+      padding: 12px 26px;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .2s, opacity .2s;
+    }
+
+    .btn:active { transform: scale(.97); }
+
+    .btn-prev {
+      background: rgba(255,255,255,.07);
+      color: var(--muted);
+      border: 1px solid rgba(255,255,255,.1);
+    }
+    .btn-prev:hover { background: rgba(255,255,255,.11); color: var(--text); }
+
+    .btn-next {
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(249,115,22,.35);
+    }
+    .btn-next:hover { box-shadow: 0 6px 28px rgba(249,115,22,.55); transform: translateY(-1px); }
+
+    .btn:disabled { opacity: .35; pointer-events: none; }
+
+    /* ───────────────── FINAL SCREEN ───────────────── */
+    #screen-final {
+      text-align: center;
+    }
+
+    .final-icon { font-size: 4rem; animation: bounceIn .6s ease both; }
+
+    .final-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin: 16px 0 10px;
+      background: linear-gradient(90deg, #f97316, #ef4444);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .final-sub { color: var(--muted); margin-bottom: 32px; font-size: .95rem; }
+
+    .final-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: center;
+    }
+
+    .btn-copy {
+      background: rgba(255,255,255,.07);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,.15);
+    }
+    .btn-copy:hover { background: rgba(255,255,255,.12); }
+
+    /* ───────────────── ANIMATIONS ───────────────── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { filter: drop-shadow(0 0 10px var(--accent)); }
+      50%       { filter: drop-shadow(0 0 28px var(--accent)); }
+    }
+
+    @keyframes bounceIn {
+      0%   { transform: scale(0); opacity: 0; }
+      60%  { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+
+    /* section transition */
+    .section-enter { animation: fadeUp .35s ease both; }
+
+    /* toast */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1f1f1f;
+      border: 1px solid var(--accent);
+      color: var(--text);
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: .9rem;
+      font-weight: 600;
+      z-index: 999;
+      transition: transform .3s ease;
+      white-space: nowrap;
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- Animated background -->
+<canvas id="bg-canvas"></canvas>
+
+<div class="wrapper">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="logo-icon">🏋️</div>
+    <h1>Briefing — Instagram da Loja</h1>
+    <p>Responda as perguntas abaixo para personalizarmos sua estratégia no Instagram.</p>
+  </header>
+
+  <!-- Progress bar -->
+  <div class="progress-wrap">
+    <div class="progress-info">
+      <span id="prog-label">Seção 1 de 8</span>
+      <span id="prog-pct">0%</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SEÇÃO 1 — SOBRE A LOJA
+  ══════════════════════════════════════════ -->
+  <div class="card" id="sec-1">
+    <div class="section-badge">🏪 Seção 1</div>
+    <h2 class="section-title">Sobre a Loja</h2>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">1</span>Qual é o nome da loja?</label>
+      <input type="text" id="q1" placeholder="Ex.: PowerStore Suplementos" />
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">2</span>Qual é o @ atual do Instagram?</label>
+      <input type="text" id="q2" placeholder="@sualojanoinsta" />
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">3</span>Em qual cidade/região a loja atende?</label>
+      <input type="text" id="q3" placeholder="Ex.: São Paulo – SP" />
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">4</span>A loja já existe ou está começando agora?</label>
+      <div class="options-grid" id="q4-opts">
+        <label class="opt-label"><input type="radio" name="q4" value="Já existe"><span class="dot"></span>Já existe</label>
+        <label class="opt-label"><input type="radio" name="q4" value="Está começando agora"><span class="dot"></span>Está começando agora</label>
+      </div>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">5</span>Por que essa loja foi criada?</label>
+      <p class="q-hint">Conte em poucas linhas a história e o motivo de existir.</p>
+      <textarea id="q5" placeholder="Escreva aqui..."></textarea>
+    </div>
+
+    <div class="nav-row">
+      <span></span>
+      <button class="btn btn-next" onclick="goNext(1)">Próximo ›</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SEÇÃO 2 — O QUE A LOJA VENDE
+  ══════════════════════════════════════════ -->
+  <div class="card" id="sec-2" style="display:none">
+    <div class="section-badge">📦 Seção 2</div>
+    <h2 class="section-title">O Que a Loja Vende</h2>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">6</span>Quais produtos a loja vai vender?</label>
+      <p class="q-hint">Ex.: whey, creatina, pré-treino, vitaminas, barras, acessórios etc.</p>
+      <textarea id="q6" placeholder="Liste os produtos..."></textarea>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">7</span>Quais marcas serão vendidas?</label>
+      <textarea id="q7" placeholder="Ex.: Growth, Max Titanium, Integral Médica..."></textarea>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">8</span>Quais são os 3 produtos que você MAIS quer vender?</label>
+      <textarea id="q8" placeholder="1. &#10;2. &#10;3. "></textarea>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">9</span>Qual é a faixa de preço dos produtos?</label>
+      <input type="text" id="q9" placeholder="Ex.: R$30 a R$350" />
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">10</span>A loja trabalha com estoque próprio ou vende sob encomenda?</label>
+      <div class="options-grid" id="q10-opts">
+        <label class="opt-label"><input type="radio" name="q10" value="Estoque próprio"><span class="dot"></span>Estoque próprio</label>
+        <label class="opt-label"><input type="radio" name="q10" value="Sob encomenda"><span class="dot"></span>Sob encomenda</label>
+        <label class="opt-label"><input type="radio" name="q10" value="Os dois"><span class="dot"></span>Os dois</label>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-prev" onclick="goPrev(2)">‹ Anterior</button>
+      <button class="btn btn-next" onclick="goNext(2)">Próximo ›</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SEÇÃO 3 — PARA QUEM A LOJA VENDE
+  ══════════════════════════════════════════ -->
+  <div class="card" id="sec-3" style="display:none">
+    <div class="section-badge">🎯 Seção 3</div>
+    <h2 class="section-title">Para Quem a Loja Vende</h2>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">11</span>Quem é o cliente PRINCIPAL?</label>
+      <p class="q-hint">Idade, sexo, cidade, nível de treino e objetivo.</p>
+      <textarea id="q11" placeholder="Ex.: Homem, 20–35 anos, treina 4x na semana, quer ganhar massa..."></textarea>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">12</span>O que esse cliente mais quer conseguir?</label>
+      <p class="q-hint">Ex.: ganhar massa, emagrecer, melhorar desempenho, ter mais energia etc.</p>
+      <textarea id="q12" placeholder="Escreva aqui..."></textarea>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">13</span>Qual é a principal dificuldade ou frustração desse cliente?</label>
+      <textarea id="q13" placeholder="Escreva aqui..."></textarea>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">14</span>O que normalmente impede esse cliente de comprar um suplemento?</label>
+      <p class="q-hint">Ex.: preço, não saber qual escolher, medo de produto falso, não confiar na loja etc.</p>
+      <textarea id="q14" placeholder="Escreva aqui..."></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-prev" onclick="goPrev(3)">‹ Anterior</button>
+      <button class="btn btn-next" onclick="goNext(3)">Próximo ›</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SEÇÃO 4 — POR QUE COMPRAR DESSA LOJA?
+  ══════════════════════════════════════════ -->
+  <div class="card" id="sec-4" style="display:none">
+    <div class="section-badge">💪 Seção 4</div>
+    <h2 class="section-title">Por Que Comprar Dessa Loja?</h2>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">15</span>Por que alguém deveria comprar dessa loja em vez de outra ou pela internet?</label>
+      <textarea id="q15" placeholder="Escreva aqui..."></textarea>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">16</span>O que a loja faz MELHOR ou DIFERENTE?</label>
+      <textarea id="q16" placeholder="Escreva aqui..."></textarea>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">17</span>Existe alguma vantagem concreta?</label>
+      <p class="q-hint">Ex.: preço, entrega rápida, atendimento, conhecimento técnico, produtos originais, variedade, localização, acompanhamento etc.</p>
+      <textarea id="q17" placeholder="Escreva aqui..."></textarea>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">18</span>Que provas a loja já tem?</label>
+      <p class="q-hint">Clientes, depoimentos, resultados, quantidade de pedidos, parcerias, avaliações, fotos, vídeos etc.</p>
+      <textarea id="q18" placeholder="Se não tiver ainda, escreva: 'não temos ainda'"></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-prev" onclick="goPrev(4)">‹ Anterior</button>
+      <button class="btn btn-next" onclick="goNext(4)">Próximo ›</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SEÇÃO 5 — A PESSOA POR TRÁS DA LOJA
+  ══════════════════════════════════════════ -->
+  <div class="card" id="sec-5" style="display:none">
+    <div class="section-badge">🧑 Seção 5</div>
+    <h2 class="section-title">A Pessoa Por Trás da Loja</h2>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">19</span>Quem é o dono da loja?</label>
+      <input type="text" id="q19" placeholder="Nome, idade, cidade..." />
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">20</span>Qual é a experiência/conhecimento dele com treino, nutrição e suplementação?</label>
+      <textarea id="q20" placeholder="Escreva aqui..."></textarea>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">21</span>Por que essa pessoa tem autoridade ou credibilidade para vender suplementos?</label>
+      <textarea id="q21" placeholder="Escreva aqui..."></textarea>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">22</span>O dono vai aparecer no Instagram da loja?</label>
+      <div class="options-grid" id="q22-opts">
+        <label class="opt-label"><input type="radio" name="q22" value="Sim, bastante"><span class="dot"></span>Sim, bastante</label>
+        <label class="opt-label"><input type="radio" name="q22" value="Sim, ocasionalmente"><span class="dot"></span>Sim, ocasionalmente</label>
+        <label class="opt-label"><input type="radio" name="q22" value="Não, foco na marca"><span class="dot"></span>Não, foco na marca</label>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-prev" onclick="goPrev(5)">‹ Anterior</button>
+      <button class="btn btn-next" onclick="goNext(5)">Próximo ›</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SEÇÃO 6 — PERSONALIDADE DA MARCA
+  ══════════════════════════════════════════ -->
+  <div class="card" id="sec-6" style="display:none">
+    <div class="section-badge">🎨 Seção 6</div>
+    <h2 class="section-title">Personalidade da Marca</h2>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">23</span>Como você quer que alguém se sinta ao entrar no Instagram?</label>
+      <p class="q-hint">Ex.: confiança, vontade de comprar, motivação, pertencimento, segurança.</p>
+      <textarea id="q23" placeholder="Escreva aqui..."></textarea>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">24</span>Escolha até 3 características da marca:</label>
+      <div class="options-grid" id="q24-opts">
+        <label class="opt-label"><input type="checkbox" name="q24" value="Técnica"><span class="dot"></span>Técnica</label>
+        <label class="opt-label"><input type="checkbox" name="q24" value="Amigável"><span class="dot"></span>Amigável</label>
+        <label class="opt-label"><input type="checkbox" name="q24" value="Jovem"><span class="dot"></span>Jovem</label>
+        <label class="opt-label"><input type="checkbox" name="q24" value="Premium"><span class="dot"></span>Premium</label>
+        <label class="opt-label"><input type="checkbox" name="q24" value="Agressiva"><span class="dot"></span>Agressiva</label>
+        <label class="opt-label"><input type="checkbox" name="q24" value="Motivacional"><span class="dot"></span>Motivacional</label>
+        <label class="opt-label"><input type="checkbox" name="q24" value="Descontraída"><span class="dot"></span>Descontraída</label>
+        <label class="opt-label"><input type="checkbox" name="q24" value="Competitiva"><span class="dot"></span>Competitiva</label>
+        <label class="opt-label"><input type="checkbox" name="q24" value="Local/comunitária"><span class="dot"></span>Local/comunitária</label>
+        <label class="opt-label" id="outra-label"><input type="checkbox" name="q24" value="Outra"><span class="dot"></span>Outra</label>
+      </div>
+      <input type="text" id="q24-outro" class="outro-input" placeholder="Qual característica?" />
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">25</span>Como a loja NÃO pode parecer?</label>
+      <p class="q-hint">Ex.: genérica, barata, amadora, arrogante, "mais uma loja de suplemento" etc.</p>
+      <textarea id="q25" placeholder="Escreva aqui..."></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-prev" onclick="goPrev(6)">‹ Anterior</button>
+      <button class="btn btn-next" onclick="goNext(6)">Próximo ›</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SEÇÃO 7 — INSTAGRAM E VENDA
+  ══════════════════════════════════════════ -->
+  <div class="card" id="sec-7" style="display:none">
+    <div class="section-badge">📲 Seção 7</div>
+    <h2 class="section-title">Instagram e Venda</h2>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">26</span>Como o cliente compra?</label>
+      <div class="options-grid" id="q26-opts">
+        <label class="opt-label"><input type="checkbox" name="q26" value="Direct"><span class="dot"></span>Direct</label>
+        <label class="opt-label"><input type="checkbox" name="q26" value="WhatsApp"><span class="dot"></span>WhatsApp</label>
+        <label class="opt-label"><input type="checkbox" name="q26" value="Site"><span class="dot"></span>Site</label>
+        <label class="opt-label"><input type="checkbox" name="q26" value="Loja física"><span class="dot"></span>Loja física</label>
+        <label class="opt-label"><input type="checkbox" name="q26" value="Outro"><span class="dot"></span>Outro</label>
+      </div>
+      <input type="text" id="q26-outro" class="outro-input" placeholder="Qual canal?" />
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">27</span>Existe entrega?</label>
+      <div class="options-grid" id="q27-opts">
+        <label class="opt-label"><input type="radio" name="q27" value="Sim"><span class="dot"></span>Sim</label>
+        <label class="opt-label"><input type="radio" name="q27" value="Não"><span class="dot"></span>Não</label>
+      </div>
+      <input type="text" id="q27-detalhe" class="outro-input" placeholder="Onde entrega e como funciona?" />
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">28</span>Qual será o principal objetivo do Instagram?</label>
+      <div class="options-grid" id="q28-opts">
+        <label class="opt-label"><input type="radio" name="q28" value="Vender diretamente"><span class="dot"></span>Vender diretamente</label>
+        <label class="opt-label"><input type="radio" name="q28" value="Gerar pedidos pelo WhatsApp/Direct"><span class="dot"></span>Gerar pedidos WhatsApp/Direct</label>
+        <label class="opt-label"><input type="radio" name="q28" value="Atrair para a loja física"><span class="dot"></span>Atrair para a loja física</label>
+        <label class="opt-label"><input type="radio" name="q28" value="Construir autoridade"><span class="dot"></span>Construir autoridade</label>
+        <label class="opt-label"><input type="radio" name="q28" value="Criar comunidade"><span class="dot"></span>Criar comunidade</label>
+        <label class="opt-label"><input type="radio" name="q28" value="Outro"><span class="dot"></span>Outro</label>
+      </div>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">29</span>Existe alguma oferta inicial para atrair os primeiros clientes?</label>
+      <textarea id="q29" placeholder="Descreva a oferta ou escreva 'não temos ainda'"></textarea>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">30</span>Existe alguma condição especial que podemos usar na comunicação?</label>
+      <p class="q-hint">Ex.: kit, desconto, frete, brinde, preço de lançamento, quantidade limitada etc.</p>
+      <textarea id="q30" placeholder="Descreva ou escreva 'não temos ainda'"></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-prev" onclick="goPrev(7)">‹ Anterior</button>
+      <button class="btn btn-next" onclick="goNext(7)">Próximo ›</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SEÇÃO 8 — CONCORRÊNCIA
+  ══════════════════════════════════════════ -->
+  <div class="card" id="sec-8" style="display:none">
+    <div class="section-badge">⚔️ Seção 8</div>
+    <h2 class="section-title">Concorrência</h2>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">31</span>Cite de 3 a 5 concorrentes ou lojas que o público também considera na hora de comprar.</label>
+      <textarea id="q31" placeholder="1. &#10;2. &#10;3. &#10;4. &#10;5. "></textarea>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">32</span>O que essas lojas fazem que você gostaria de fazer MELHOR?</label>
+      <textarea id="q32" placeholder="Escreva aqui..."></textarea>
+    </div>
+
+    <div class="question-block">
+      <label class="q-label"><span class="num">33</span>Existe algum Instagram que você admira pela forma como vende ou se comunica?</label>
+      <textarea id="q33" placeholder="@ do perfil e por quê você admira..."></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-prev" onclick="goPrev(8)">‹ Anterior</button>
+      <button class="btn btn-next" onclick="finalize()">✅ Finalizar</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       TELA FINAL
+  ══════════════════════════════════════════ -->
+  <div class="card" id="screen-final" style="display:none">
+    <div class="final-icon">🚀</div>
+    <h2 class="final-title">Briefing Concluído!</h2>
+    <p class="final-sub">Clique no botão abaixo para baixar suas respostas em PDF e enviar para seu estrategista.</p>
+
+    <div class="final-actions">
+      <button class="btn btn-next" id="btn-pdf" onclick="downloadPDF()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        Baixar PDF
+      </button>
+      <button class="btn btn-copy" onclick="resetQuiz()">🔄 Recomeçar</button>
+    </div>
+
+    <div id="pdf-status" style="margin-top:20px; font-size:.85rem; color:#9ca3af; text-align:center; min-height:22px;"></div>
+  </div>
+
+</div><!-- /wrapper -->
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- jsPDF via CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+  /* ────────── BACKGROUND CANVAS ────────── */
+  (function () {
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles = [], lines = [];
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    /* Equipment silhouette shapes */
+    const SHAPES = ['barbell', 'dumbbell', 'kettlebell'];
+
+    function rand(a, b) { return a + Math.random() * (b - a); }
+
+    function createParticle() {
+      return {
+        x: rand(0, W),
+        y: rand(H, H + 80),
+        size: rand(14, 38),
+        speed: rand(0.3, 0.9),
+        opacity: rand(0.04, 0.13),
+        rotation: rand(0, Math.PI * 2),
+        rotSpeed: rand(-0.005, 0.005),
+        shape: SHAPES[Math.floor(Math.random() * SHAPES.length)]
+      };
+    }
+
+    for (let i = 0; i < 22; i++) {
+      const p = createParticle();
+      p.y = rand(0, H); // scatter on init
+      particles.push(p);
+    }
+
+    function drawBarbell(ctx, size) {
+      const bar = size * 2.2, plateW = size * 0.28, plateH = size * 0.72;
+      ctx.fillRect(-bar / 2, -3, bar, 6);
+      ctx.fillRect(-bar / 2, -plateH / 2, plateW, plateH);
+      ctx.fillRect( bar / 2 - plateW, -plateH / 2, plateW, plateH);
+    }
+
+    function drawDumbbell(ctx, size) {
+      const bar = size * 1.1, plateW = size * 0.25, plateH = size * 0.55;
+      ctx.fillRect(-bar / 2, -2.5, bar, 5);
+      ctx.fillRect(-bar / 2, -plateH / 2, plateW, plateH);
+      ctx.fillRect( bar / 2 - plateW, -plateH / 2, plateW, plateH);
+    }
+
+    function drawKettlebell(ctx, size) {
+      ctx.beginPath();
+      ctx.arc(0, size * 0.15, size * 0.38, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, -size * 0.1, size * 0.26, Math.PI, 0, false);
+      ctx.strokeStyle = ctx.fillStyle;
+      ctx.lineWidth = size * 0.14;
+      ctx.stroke();
+    }
+
+    function drawShape(ctx, p) {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+      ctx.globalAlpha = p.opacity;
+      ctx.fillStyle = '#f97316';
+      if (p.shape === 'barbell')    drawBarbell(ctx, p.size);
+      else if (p.shape === 'dumbbell') drawDumbbell(ctx, p.size);
+      else                          drawKettlebell(ctx, p.size);
+      ctx.restore();
+    }
+
+    /* Grid lines */
+    function drawGrid() {
+      ctx.strokeStyle = 'rgba(249,115,22,0.04)';
+      ctx.lineWidth = 1;
+      const step = 80;
+      for (let x = 0; x < W; x += step) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      }
+      for (let y = 0; y < H; y += step) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+    }
+
+    function loop() {
+      ctx.clearRect(0, 0, W, H);
+      drawGrid();
+
+      particles.forEach(p => {
+        p.y -= p.speed;
+        p.rotation += p.rotSpeed;
+        if (p.y < -80) { Object.assign(p, createParticle()); }
+        drawShape(ctx, p);
+      });
+
+      requestAnimationFrame(loop);
+    }
+    loop();
+  })();
+
+  /* ────────── QUIZ LOGIC ────────── */
+  const TOTAL_SECTIONS = 8;
+  let currentSection = 1;
+
+  function showSection(n) {
+    for (let i = 1; i <= TOTAL_SECTIONS; i++) {
+      const el = document.getElementById('sec-' + i);
+      if (el) el.style.display = 'none';
+    }
+    document.getElementById('screen-final').style.display = 'none';
+
+    const target = document.getElementById('sec-' + n);
+    if (target) {
+      target.style.display = 'block';
+      target.classList.remove('section-enter');
+      void target.offsetWidth;
+      target.classList.add('section-enter');
+    }
+
+    updateProgress(n);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function updateProgress(n) {
+    const pct = Math.round(((n - 1) / TOTAL_SECTIONS) * 100);
+    document.getElementById('prog-fill').style.width = pct + '%';
+    document.getElementById('prog-label').textContent = 'Seção ' + n + ' de ' + TOTAL_SECTIONS;
+    document.getElementById('prog-pct').textContent = pct + '%';
+  }
+
+  function goNext(from) {
+    currentSection = from + 1;
+    if (currentSection > TOTAL_SECTIONS) { finalize(); return; }
+    showSection(currentSection);
+  }
+
+  function goPrev(from) {
+    currentSection = from - 1;
+    if (currentSection < 1) currentSection = 1;
+    showSection(currentSection);
+  }
+
+  /* ────────── RADIO / CHECKBOX STYLES ────────── */
+  document.addEventListener('change', function (e) {
+    const input = e.target;
+    if (input.type === 'radio') {
+      const name = input.name;
+      document.querySelectorAll(`input[name="${name}"]`).forEach(el => {
+        el.closest('.opt-label').classList.remove('checked');
+      });
+      input.closest('.opt-label').classList.add('checked');
+
+      /* show delivery detail */
+      if (name === 'q27') {
+        const d = document.getElementById('q27-detalhe');
+        d.classList.toggle('visible', input.value === 'Sim');
+      }
+    }
+
+    if (input.type === 'checkbox') {
+      const lbl = input.closest('.opt-label');
+      lbl.classList.toggle('checked', input.checked);
+
+      /* max 3 for q24 */
+      if (input.name === 'q24') {
+        const checked = document.querySelectorAll('input[name="q24"]:checked');
+        if (checked.length > 3) {
+          input.checked = false;
+          lbl.classList.remove('checked');
+          showToast('Selecione no máximo 3 características.');
+          return;
+        }
+        const outraChecked = [...checked].some(el => el.value === 'Outra');
+        document.getElementById('q24-outro').classList.toggle('visible', outraChecked);
+      }
+
+      if (input.name === 'q26') {
+        const checked = [...document.querySelectorAll('input[name="q26"]:checked')];
+        const hasOutro = checked.some(el => el.value === 'Outro');
+        document.getElementById('q26-outro').classList.toggle('visible', hasOutro);
+      }
+    }
+  });
+
+  /* ────────── COLLECT ANSWERS ────────── */
+  function getVal(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  }
+
+  function getRadio(name) {
+    const checked = document.querySelector(`input[name="${name}"]:checked`);
+    return checked ? checked.value : '—';
+  }
+
+  function getCheckboxes(name) {
+    const checked = document.querySelectorAll(`input[name="${name}"]:checked`);
+    const vals = [...checked].map(el => el.value);
+    return vals.length ? vals.join(', ') : '—';
+  }
+
+  function collectAll() {
+    return {
+      '1. SOBRE A LOJA': {
+        '1. Nome da loja':               getVal('q1')  || '—',
+        '2. @ Instagram':                getVal('q2')  || '—',
+        '3. Cidade/Região':              getVal('q3')  || '—',
+        '4. Status da loja':             getRadio('q4'),
+        '5. Por que a loja foi criada':  getVal('q5')  || '—',
+      },
+      '2. O QUE A LOJA VENDE': {
+        '6. Produtos':                   getVal('q6')  || '—',
+        '7. Marcas':                     getVal('q7')  || '—',
+        '8. Top 3 produtos':             getVal('q8')  || '—',
+        '9. Faixa de preço':             getVal('q9')  || '—',
+        '10. Estoque ou encomenda':      getRadio('q10'),
+      },
+      '3. PARA QUEM A LOJA VENDE': {
+        '11. Cliente principal':         getVal('q11') || '—',
+        '12. O que o cliente quer':      getVal('q12') || '—',
+        '13. Dificuldade/frustração':    getVal('q13') || '—',
+        '14. O que impede a compra':     getVal('q14') || '—',
+      },
+      '4. POR QUE COMPRAR DESSA LOJA': {
+        '15. Motivo de escolher a loja': getVal('q15') || '—',
+        '16. O que faz melhor/diferente':getVal('q16') || '—',
+        '17. Vantagem concreta':         getVal('q17') || '—',
+        '18. Provas que a loja tem':     getVal('q18') || '—',
+      },
+      '5. A PESSOA POR TRÁS DA LOJA': {
+        '19. Quem é o dono':             getVal('q19') || '—',
+        '20. Experiência com treino':    getVal('q20') || '—',
+        '21. Por que tem credibilidade': getVal('q21') || '—',
+        '22. Aparece no Instagram?':     getRadio('q22'),
+      },
+      '6. PERSONALIDADE DA MARCA': {
+        '23. Como quer que se sintam':   getVal('q23') || '—',
+        '24. Características escolhidas':getCheckboxes('q24') + (getVal('q24-outro') ? ' – ' + getVal('q24-outro') : ''),
+        '25. Como a loja NÃO pode parecer': getVal('q25') || '—',
+      },
+      '7. INSTAGRAM E VENDA': {
+        '26. Canal de compra':           getCheckboxes('q26') + (getVal('q26-outro') ? ' – ' + getVal('q26-outro') : ''),
+        '27. Entrega?':                  getRadio('q27') + (getVal('q27-detalhe') ? ' — ' + getVal('q27-detalhe') : ''),
+        '28. Objetivo do Instagram':     getRadio('q28'),
+        '29. Oferta inicial':            getVal('q29') || '—',
+        '30. Condição especial':         getVal('q30') || '—',
+      },
+      '8. CONCORRÊNCIA': {
+        '31. Concorrentes':              getVal('q31') || '—',
+        '32. O que gostaria de fazer melhor': getVal('q32') || '—',
+        '33. Instagram de referência':   getVal('q33') || '—',
+      }
+    };
+  }
+
+  /* ────────── FINALIZE ────────── */
+  function finalize() {
+    for (let i = 1; i <= TOTAL_SECTIONS; i++) {
+      const el = document.getElementById('sec-' + i);
+      if (el) el.style.display = 'none';
+    }
+
+    const final = document.getElementById('screen-final');
+    final.style.display = 'block';
+    final.classList.remove('section-enter');
+    void final.offsetWidth;
+    final.classList.add('section-enter');
+
+    document.getElementById('prog-fill').style.width = '100%';
+    document.getElementById('prog-label').textContent = 'Concluído!';
+    document.getElementById('prog-pct').textContent = '100%';
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ────────── PDF DOWNLOAD ────────── */
+  async function downloadPDF() {
+    const btn = document.getElementById('btn-pdf');
+    const status = document.getElementById('pdf-status');
+
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Gerando PDF...';
+    status.textContent = '';
+
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      const data = collectAll();
+
+      const PAGE_W    = 210;
+      const PAGE_H    = 297;
+      const MARGIN_L  = 18;
+      const MARGIN_R  = 18;
+      const CONTENT_W = PAGE_W - MARGIN_L - MARGIN_R;
+      const LINE_H    = 6;
+      let y = 0;
+
+      /* ── helpers ── */
+      function newPage() {
+        doc.addPage();
+        y = 18;
+        drawPageBg();
+      }
+
+      function checkY(needed) {
+        if (y + needed > PAGE_H - 16) newPage();
+      }
+
+      function drawPageBg() {
+        /* dark background */
+        doc.setFillColor(10, 10, 10);
+        doc.rect(0, 0, PAGE_W, PAGE_H, 'F');
+        /* subtle grid */
+        doc.setDrawColor(40, 20, 5);
+        doc.setLineWidth(0.2);
+        for (let gx = 0; gx < PAGE_W; gx += 15) {
+          doc.line(gx, 0, gx, PAGE_H);
+        }
+        for (let gy = 0; gy < PAGE_H; gy += 15) {
+          doc.line(0, gy, PAGE_W, gy);
+        }
+      }
+
+      function wrapText(text, maxWidth, fontSize) {
+        doc.setFontSize(fontSize);
+        return doc.splitTextToSize(String(text), maxWidth);
+      }
+
+      /* ── COVER ── */
+      drawPageBg();
+
+      /* orange accent bar top */
+      doc.setFillColor(249, 115, 22);
+      doc.rect(0, 0, PAGE_W, 3, 'F');
+
+      /* gym icon area */
+      doc.setFontSize(48);
+      doc.setTextColor(249, 115, 22);
+      doc.text('🏋️', PAGE_W / 2, 72, { align: 'center' });
+
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(249, 115, 22);
+      doc.text('BRIEFING', PAGE_W / 2, 98, { align: 'center' });
+
+      doc.setFontSize(14);
+      doc.setTextColor(230, 230, 230);
+      doc.text('Instagram da Loja de Suplementos', PAGE_W / 2, 108, { align: 'center' });
+
+      /* separator line */
+      doc.setDrawColor(249, 115, 22);
+      doc.setLineWidth(0.8);
+      doc.line(MARGIN_L + 20, 115, PAGE_W - MARGIN_R - 20, 115);
+
+      /* store name from q1 */
+      const storeName = (document.getElementById('q1').value.trim() || 'Loja').toUpperCase();
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255, 255, 255);
+      doc.text(storeName, PAGE_W / 2, 130, { align: 'center' });
+
+      /* date */
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(120, 120, 120);
+      doc.text(dateStr, PAGE_W / 2, 140, { align: 'center' });
+
+      /* bottom bar */
+      doc.setFillColor(249, 115, 22);
+      doc.rect(0, PAGE_H - 3, PAGE_W, 3, 'F');
+
+      /* ── CONTENT PAGES ── */
+      newPage();
+
+      for (const [sectionTitle, questions] of Object.entries(data)) {
+
+        /* section header block */
+        checkY(22);
+        doc.setFillColor(249, 115, 22);
+        doc.rect(MARGIN_L, y, CONTENT_W, 9, 'F');
+
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text(sectionTitle.toUpperCase(), MARGIN_L + 4, y + 6);
+        y += 14;
+
+        for (const [question, answer] of Object.entries(questions)) {
+          /* question label */
+          checkY(12);
+          doc.setFontSize(8.5);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(249, 115, 22);
+          const qLines = wrapText(question, CONTENT_W, 8.5);
+          doc.text(qLines, MARGIN_L, y);
+          y += qLines.length * LINE_H * 0.85;
+
+          /* answer box */
+          const answerLines = wrapText(answer || '—', CONTENT_W - 8, 8.8);
+          const boxH = answerLines.length * LINE_H + 5;
+          checkY(boxH + 4);
+
+          doc.setFillColor(22, 22, 22);
+          doc.setDrawColor(60, 30, 5);
+          doc.setLineWidth(0.3);
+          doc.roundedRect(MARGIN_L, y, CONTENT_W, boxH, 2, 2, 'FD');
+
+          /* orange left accent */
+          doc.setFillColor(249, 115, 22);
+          doc.rect(MARGIN_L, y, 2.5, boxH, 'F');
+
+          doc.setFontSize(8.8);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(220, 220, 220);
+          doc.text(answerLines, MARGIN_L + 6, y + 4.5, { lineHeightFactor: 1.35 });
+
+          y += boxH + 5;
+        }
+
+        y += 6; /* space between sections */
+      }
+
+      /* footer on every page */
+      const totalPages = doc.getNumberOfPages();
+      for (let p = 2; p <= totalPages; p++) {
+        doc.setPage(p);
+        doc.setFillColor(249, 115, 22);
+        doc.rect(0, PAGE_H - 3, PAGE_W, 3, 'F');
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Página ${p - 1} de ${totalPages - 1}`, PAGE_W - MARGIN_R, PAGE_H - 6, { align: 'right' });
+      }
+
+      /* save */
+      const filename = `Briefing_Instagram_${storeName.replace(/\s+/g,'_')}.pdf`;
+      doc.save(filename);
+
+      status.textContent = `✅ PDF "${filename}" baixado com sucesso!`;
+      status.style.color = '#4ade80';
+
+    } catch (err) {
+      console.error(err);
+      status.textContent = '⚠️ Erro ao gerar o PDF. Verifique sua conexão e tente novamente.';
+      status.style.color = '#f87171';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg> Baixar PDF`;
+    }
+  }
+
+  /* ────────── RESET ────────── */
+  function resetQuiz() {
+    document.querySelectorAll('input[type="text"], textarea').forEach(el => el.value = '');
+    document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(el => {
+      el.checked = false;
+      el.closest('.opt-label').classList.remove('checked');
+    });
+    document.querySelectorAll('.outro-input').forEach(el => el.classList.remove('visible'));
+    document.getElementById('screen-final').style.display = 'none';
+    document.getElementById('summary-box').classList.remove('visible');
+    currentSection = 1;
+    showSection(1);
+  }
+
+  /* ────────── TOAST ────────── */
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  /* init */
+  showSection(1);
+</script>
+</body>
+</html>
